@@ -146,7 +146,7 @@ void forward(void) {
   //   HFIL(0,128,0) = 1990;
   // }
   
-  // MPI_Scatter(&HFIL(0, 0, 0),nb_bloc*size_y,MPI_DOUBLE,&HFIL(0,0,0)+my_rank*nb_bloc*local_size_y,nb_bloc*size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
+  MPI_Scatter(&HFIL(0, 0, 0),nb_bloc*size_y,MPI_DOUBLE,&HFIL(0,0,0)+my_rank*nb_bloc*local_size_y,nb_bloc*size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
   // HFIL(0,148,200) = 111111.0;
 

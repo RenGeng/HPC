@@ -39,8 +39,12 @@ int main(int argc, char **argv) {
     alloc();
     printf("Memory allocated my_rank=%d\n",my_rank);
 
+    if(my_rank==0)
+      {
+        
     gauss_init();
     printf("State initialised my_rank=%d\n",my_rank);
+      }
 
   // MPI_Bcast(&size_x,1,MPI_INT,0,MPI_COMM_WORLD);
   // MPI_Bcast(&size_y,1,MPI_INT,0,MPI_COMM_WORLD);
