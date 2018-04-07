@@ -21,3 +21,7 @@ obj/%.o : src/%.c
 
 clean :
 	rm -f bin/* obj/*
+
+exec:
+	mpirun -n 4 -bynode -hostfile src/hostfile ./bin/shalw -x 8192 -y 8192 -t 20
+	
