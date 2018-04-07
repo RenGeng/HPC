@@ -179,21 +179,30 @@ void forward(void) {
       }
        if(my_rank!=np-1)
       {
-        MPI_Sendrecv(&HPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,&UPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&VPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_VPHY,&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_VPHY,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&HFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_HFIL,&HFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HFIL,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&UFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UFIL,&UFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_UFIL,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&VFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_VFIL,&VFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_VFIL,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&HPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
+
+        MPI_Recv(&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
+        MPI_Send(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD);
+        MPI_Recv(&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
+
+        // MPI_Sendrecv(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,&UPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&VPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_VPHY,&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_VPHY,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&HFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_HFIL,&HFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HFIL,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&UFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UFIL,&UFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_UFIL,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&VFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_VFIL,&VFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_VFIL,MPI_COMM_WORLD,&status);
       }
      if(my_rank!=0)
       {
-        MPI_Sendrecv(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,&HPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&UPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VPHY,&VPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VPHY,MPI_COMM_WORLD,&status);/*PROBLEME SUR VPHY*/
-        MPI_Sendrecv(&HFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HFIL,&HFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HFIL,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&UFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UFIL,&UFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UFIL,MPI_COMM_WORLD,&status);
-        MPI_Sendrecv(&VFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VFIL,&VFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VFIL,MPI_COMM_WORLD,&status);
+        MPI_Send(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD);
+        MPI_Recv(&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&status);
+        MPI_Send(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD);
+
+        // MPI_Sendrecv(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,&HPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&UPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VPHY,&VPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VPHY,MPI_COMM_WORLD,&status);/*PROBLEME SUR VPHY*/
+        // MPI_Sendrecv(&HFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HFIL,&HFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HFIL,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&UFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UFIL,&UFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UFIL,MPI_COMM_WORLD,&status);
+        // MPI_Sendrecv(&VFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VFIL,&VFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VFIL,MPI_COMM_WORLD,&status);
       }
 
       MPI_Gather(&HFIL(t,0,0)+local_size_y*(my_rank*nb_bloc),nb_bloc*local_size_y,MPI_DOUBLE,&HFIL(t,0,0),nb_bloc*local_size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);

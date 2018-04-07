@@ -21,3 +21,6 @@ obj/%.o : src/%.c
 
 clean :
 	rm -f bin/* obj/*
+
+exec:
+	mpirun -n 4 -bynode ./bin/shalw --export --export-path /tmp/3408406
