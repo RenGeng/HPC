@@ -45,11 +45,6 @@ int main(int argc, char **argv) {
     printf("State initialised my_rank=%d\n",my_rank);
       }
 
-  // MPI_Bcast(&size_x,1,MPI_INT,0,MPI_COMM_WORLD);
-  // MPI_Bcast(&size_y,1,MPI_INT,0,MPI_COMM_WORLD);
-
-
-  // else usleep(1000);
   forward();
   printf("State computed my_rank = %d\n",my_rank);
 

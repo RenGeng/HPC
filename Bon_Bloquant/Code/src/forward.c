@@ -125,26 +125,16 @@ void forward(void) {
       file = create_file();
       export_step(file, t);
    }
-   /* Taille de bloc provisoir  */
+   /* Taille de bloc*/
    int nb_bloc = size_x/np;
 
    /* Initialisation des variables locales */
-  local_size_x = (my_rank==0 || my_rank==np-1) ? (nb_bloc+1) : (nb_bloc+2);
-  // printf("local_size_x = %d sur le process %d\n",local_size_x,my_rank);
+  // local_size_x = (my_rank==0 || my_rank==np-1) ? (nb_bloc+1) : (nb_bloc+2);
 
   local_size_y = size_y;
-
-  // MPI_Bcast(&nb_steps,1,MPI_INT,0,MPI_COMM_WORLD);
-
-  // if(my_rank==0)
-  // {
-  //   HFIL(0,64,0) = 199;
-  //   HFIL(0,128,0) = 1990;
-  // }
   
   MPI_Scatter(&HFIL(0, 0, 0),nb_bloc*size_y,MPI_DOUBLE,&HFIL(0,0,0)+my_rank*nb_bloc*local_size_y,nb_bloc*size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
-  // HFIL(0,148,200) = 111111.0;
 
    for (t = 1; t < nb_steps; t++) 
    {  
@@ -161,56 +151,32 @@ void forward(void) {
   
       for (int j = 0; j < local_size_y; j++) 
       {
-        // printf("Derniere ligne de trou %lf sur le process %d\n",HPHY(1,local_size_x-1,j),my_rank);
-        // printf("Deuxieme ligne %lf sur le process %d\n",HPHY(1,1,j),my_rank);
-        // if(j==10) break;
 
         for (int i = my_rank*nb_bloc; i < (my_rank+1)*nb_bloc; i++) 
        {   
-
           HPHY(t, i, j) = hPhy_forward(t, i, j);
           UPHY(t, i, j) = uPhy_forward(t, i, j);
           VPHY(t, i, j) = vPhy_forward(t, i, j);
           HFIL(t, i, j) = hFil_forward(t, i, j);
           UFIL(t, i, j) = uFil_forward(t, i, j);
           VFIL(t, i, j) = vFil_forward(t, i, j);
-
        }
       }
        if(my_rank!=np-1)
       {
-        // MPI_Sendrecv(&HPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
-
         MPI_Recv(&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
         MPI_Send(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD);
-        MPI_Recv(&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
-
-        // MPI_Sendrecv(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,&UPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&VPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_VPHY,&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_VPHY,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&HFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_HFIL,&HFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HFIL,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&UFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UFIL,&UFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_UFIL,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&VFIL(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_VFIL,&VFIL(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_VFIL,MPI_COMM_WORLD,&status);
+        // MPI_Recv(&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&status);
       }
      if(my_rank!=0)
       {
         MPI_Send(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD);
         MPI_Recv(&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&status);
-        MPI_Send(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD);
-
-        // MPI_Sendrecv(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,&HPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&UPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VPHY,&VPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VPHY,MPI_COMM_WORLD,&status);/*PROBLEME SUR VPHY*/
-        // MPI_Sendrecv(&HFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HFIL,&HFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HFIL,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&UFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UFIL,&UFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UFIL,MPI_COMM_WORLD,&status);
-        // MPI_Sendrecv(&VFIL(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VFIL,&VFIL(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_VFIL,MPI_COMM_WORLD,&status);
+        // MPI_Send(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD);
       }
 
       MPI_Gather(&HFIL(t,0,0)+local_size_y*(my_rank*nb_bloc),nb_bloc*local_size_y,MPI_DOUBLE,&HFIL(t,0,0),nb_bloc*local_size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
-        // FAIRE UN PETIT GATHER ICI
-        // MPI_Gather(&HFIL(t,0,0)+local_size_y*(my_rank!=0),nb_bloc*local_size_y,MPI_DOUBLE,&HFIL(0,0,0),nb_bloc*local_size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
-        // MPI_Gather(&HFIL(1,0,0)+local_size_y*(my_rank!=0),nb_bloc*local_size_y,MPI_DOUBLE,&HFIL(1,0,0),nb_bloc*local_size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
-      // MPI_Barrier(MPI_COMM_WORLD);
         if (file_export && my_rank==0) 
         {
   	     export_step(file, t);
