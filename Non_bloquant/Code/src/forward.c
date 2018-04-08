@@ -54,7 +54,7 @@ double hPhy_forward(int t, int i, int j) {
 
   return HFIL(t - 1, i, j) -
     dt * hmoy * ((UPHY(t - 1, i, j) - c) / dx +
-     (d - VPHY(t - 1, i, j)) / dy);
+		 (d - VPHY(t - 1, i, j)) / dy);
 }
 
 double uPhy_forward(int t, int i, int j) {
@@ -81,8 +81,8 @@ double uPhy_forward(int t, int i, int j) {
 
   return UFIL(t - 1, i, j) +
     dt * ((-grav / dx) * (b - HPHY(t - 1, i, j)) +
-    (pcor / 4.) * (VPHY(t - 1, i, j) + e + f + g) -
-    (dissip * UFIL(t - 1, i, j)));
+	  (pcor / 4.) * (VPHY(t - 1, i, j) + e + f + g) -
+	  (dissip * UFIL(t - 1, i, j)));
 }
 
 double vPhy_forward(int t, int i, int j) {
@@ -109,26 +109,27 @@ double vPhy_forward(int t, int i, int j) {
 
   return VFIL(t - 1, i, j) +
     dt * ((-grav / dy) * (HPHY(t - 1, i, j) - c) -
-    (pcor / 4.) * (d + e + f + UPHY(t - 1, i, j)) -
-    (dissip * VFIL(t - 1, i, j)));
+	  (pcor / 4.) * (d + e + f + UPHY(t - 1, i, j)) -
+	  (dissip * VFIL(t - 1, i, j)));
 }
 
-void forward(void) {
-   FILE *file = NULL;
-   double svdt = 0.;
-   int t = 0;
-   MPI_Status status;
-   int local_size_x,local_size_y;
+void forward(void) 
+{
+  FILE *file = NULL;
+  double svdt = 0.;
+  int t = 0;
+  MPI_Status status;
+  int /*local_size_x,*/local_size_y;
 
   if (file_export && my_rank == 0) 
-   {
+    {
       file = create_file();
       export_step(file, t);
-   }
-   /* Taille de bloc*/
-   int nb_bloc = size_x/np;
+    }
+  /* Taille de bloc*/
+  int nb_bloc = size_x/np;
 
-   /* Initialisation des variables locales */
+  /* Initialisation des variables locales */
   local_size_y = size_y;
   
 
@@ -137,96 +138,74 @@ void forward(void) {
   MPI_Scatter(&HFIL(0, 0, 0),nb_bloc*size_y,MPI_DOUBLE,&HFIL(0,0,0)+my_rank*nb_bloc*local_size_y,nb_bloc*size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
 
-   for (t = 1; t < nb_steps; t++) 
-   {  
+  for (t = 1; t < nb_steps; t++) 
+  {  
       
-      if (t == 1) 
-      {
-       svdt = dt;
-       dt = 0;
-      }
-      if (t == 2)
-      {
-       dt = svdt / 2.;
-      }
-  
-      // printf("COUCOU\n");
+    if (t == 1) 
+  	{
+  	  svdt = dt;
+  	  dt = 0;
+  	}
+    if (t == 2)
+  	{
+  	  dt = svdt / 2.;
+  	}
 
-      /* A FAIRE POUR t et non pour i ou j*/
+    for (int j = 0; j < local_size_y; j++) 
+  	{
 
-      for (int j = 0; j < local_size_y; j++) 
-      {
+  	  for (int i = my_rank*nb_bloc; i < (my_rank+1)*nb_bloc; i++) 
+      {   
+        if(i==my_rank*nb_bloc && j==0 && t>1 && my_rank!=0)
+  		  {
+    		  // L'opération hPhy_forward a besoin de la ligne précédentes donc on ne doit pas commencer à calculer sans la précédente ligne
+    		  MPI_Recv(&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&status);
+  		  }
+        if(i==(my_rank+1)*nb_bloc-1 && t>1 && my_rank!=np-1)
+  		  {
+    		  MPI_Wait(&request_HPHY,NULL);
+    		  MPI_Wait(&request_VPHY,NULL);
+  		  }
 
-        // if(j==1) 
-        //   {
-        //     if(my_rank!=0)
-        //     {
-        //       MPI_Isend(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&test);
-        //       // printf("Envoyé %lf à process %d\n",HPHY(t,my_rank*nb_bloc,0),my_rank-1);
-        //       MPI_Isend(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&test);
-        //     }
-        //     if(my_rank!=np-1) 
-        //     {
-        //       MPI_Isend(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD,&test);
-        //       // printf("Envoyé %lf à process %d\n",UPHY(t,((my_rank+1)*nb_bloc-1),0),my_rank+1);
-        //       MPI_Irecv(&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&request_HPHY);
-        //       MPI_Irecv(&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&request_VPHY);
-        //       // printf("RECU BLOQUANT BON %d \n",i);
-        //     }
-        //   }
+  	      // printf("process %d dehors\n",my_rank);
+  	      HPHY(t, i, j) = hPhy_forward(t, i, j);
+  	      UPHY(t, i, j) = uPhy_forward(t, i, j);
+  	      VPHY(t, i, j) = vPhy_forward(t, i, j);
+  	      HFIL(t, i, j) = hFil_forward(t, i, j);
+  	      UFIL(t, i, j) = uFil_forward(t, i, j);
+  	      VFIL(t, i, j) = vFil_forward(t, i, j);
+  	    }
+  	}
 
-        for (int i = my_rank*nb_bloc; i < (my_rank+1)*nb_bloc; i++) 
-       {   
+    if(my_rank!=np-1)
+  	{
+  	  MPI_Irecv(&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&request_HPHY);
+  	  MPI_Isend(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD,&test);
+  	  MPI_Irecv(&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&request_VPHY);
+  	}
+    
+    if(my_rank!=0)
+  	{ 
+  	  MPI_Isend(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&test);
+  	  // MPI_Irecv(&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&test);
+  	  MPI_Isend(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&test);
+  	}
 
-          if(i==my_rank*nb_bloc && j==0 && t>1 && my_rank!=0)
-          {
-              MPI_Recv(&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&status); // L'opération hPhy_forward a besoin de la ligne précédentes donc on ne doit pas commencer à calculer sans la précédente ligne
-              // printf("reçu %lf sur process %d\n",UPHY(t,(my_rank*nb_bloc-1),0),my_rank);
-          }
-          if(i==(my_rank+1)*nb_bloc-1 && t>1 && my_rank!=np-1)
-          {
-            MPI_Wait(&request_HPHY,NULL);
-            MPI_Wait(&request_VPHY,NULL);
-          }
-
-          // printf("process %d dehors\n",my_rank);
-          HPHY(t, i, j) = hPhy_forward(t, i, j);
-          UPHY(t, i, j) = uPhy_forward(t, i, j);
-          VPHY(t, i, j) = vPhy_forward(t, i, j);
-          HFIL(t, i, j) = hFil_forward(t, i, j);
-          UFIL(t, i, j) = uFil_forward(t, i, j);
-          VFIL(t, i, j) = vFil_forward(t, i, j);
-       }
-      }
-
-      if(my_rank!=np-1)
-      {
-        MPI_Irecv(&HPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&request_HPHY);
-        MPI_Isend(&UPHY(t,0,0)+((local_size_y*((my_rank+1)*nb_bloc-1))),local_size_y,MPI_DOUBLE,my_rank+1,TAG_UPHY,MPI_COMM_WORLD,&test);
-        MPI_Irecv(&VPHY(t,0,0)+local_size_y*(my_rank+1)*nb_bloc,local_size_y,MPI_DOUBLE,my_rank+1,TAG_HPHY,MPI_COMM_WORLD,&request_VPHY);
-      }
-     if(my_rank!=0)
-      { 
-        MPI_Isend(&HPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&test);
-        // MPI_Irecv(&UPHY(t,0,0)+(my_rank*nb_bloc-1)*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_UPHY,MPI_COMM_WORLD,&test);
-        MPI_Isend(&VPHY(t,0,0)+my_rank*nb_bloc*local_size_y,local_size_y,MPI_DOUBLE,my_rank-1,TAG_HPHY,MPI_COMM_WORLD,&test);
-      }
-
-      MPI_Gather(&HFIL(t,0,0)+local_size_y*(my_rank*nb_bloc),nb_bloc*local_size_y,MPI_DOUBLE,&HFIL(t,0,0),nb_bloc*local_size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
+        MPI_Gather(&HFIL(t,0,0)+local_size_y*(my_rank*nb_bloc),nb_bloc*local_size_y,MPI_DOUBLE,&HFIL(t,0,0),nb_bloc*local_size_y,MPI_DOUBLE,0,MPI_COMM_WORLD);
 
         if (file_export && my_rank==0) 
-        {
-         export_step(file, t);
-        }
-      
+          {
+  	  export_step(file, t);
+          }
+        
         if (t == 2) 
-        {
-     dt = svdt;
-        }
-   }
+          {
+  	  dt = svdt;
+          }
+  }
 
-   if (file_export&&my_rank==0) 
-   {
+  if (file_export&&my_rank==0) 
+    {
       finalize_export(file);
-   }
+    }
 }
